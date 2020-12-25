@@ -4,9 +4,9 @@ module Home
 
 import Prelude
 
-import Article (Article)
 import Elmish (ReactElement)
 import Elmish.HTML.Styled as H
+import Types.Article (Article)
 
 type Props r =
   { articles :: Array Article

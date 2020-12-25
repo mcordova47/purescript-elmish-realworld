@@ -1,4 +1,4 @@
-module Article
+module Types.Article
   ( Article
   ) where
 

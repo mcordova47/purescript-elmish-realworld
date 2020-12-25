@@ -2,12 +2,12 @@ module Main where
 
 import Prelude
 
-import Article (Article)
 import Effect (Effect)
 import Elmish (ComponentDef, DispatchMsgFn, ReactElement, Transition)
 import Elmish.Boot (defaultMain)
 import Elmish.HTML.Styled as H
 import Home as Home
+import Types.Article (Article)
 import Utils.Html as Html
 
 main :: Effect Unit
