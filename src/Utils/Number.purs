@@ -4,17 +4,24 @@ module Utils.Number
 
 import Prelude
 
-import Data.Foldable (elem)
 import Data.Ord (abs)
 
 formatAsOrdinal :: Int -> String
 formatAsOrdinal n =
   show n <> suffix
   where
-    suffix =
-      case abs n of
-        n' | n' `elem` [11, 12, 13] -> "th"
-        n' -> case n' `mod` 10 of
-          1 -> "st"
-          2 -> "nd"
-          _ -> "th"
+    suffix = case remander100 of
+      11 -> "th"
+      12 -> "th"
+      13 -> "th"
+      _ -> case remander10 of
+        1 -> "st"
+        2 -> "nd"
+        3 -> "rd"
+        _ -> "th"
+    absN =
+      abs n
+    remander100 = 
+      absN `mod` 100
+    remander10 = 
+      absN `mod` 10
