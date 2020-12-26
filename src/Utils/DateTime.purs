@@ -15,4 +15,5 @@ import Utils.Number as Number
 formatAsDate :: DateTime -> String
 formatAsDate dt =
   format (MonthFull : Nil) dt <>
+  " " <>
   Number.formatAsOrdinal (fromEnum $ Date.day $ DateTime.date dt)
