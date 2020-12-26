@@ -10,18 +10,10 @@ formatAsOrdinal :: Int -> String
 formatAsOrdinal n =
   show n <> suffix
   where
-    suffix = case remander100 of
-      11 -> "th"
-      12 -> "th"
-      13 -> "th"
-      _ -> case remander10 of
-        1 -> "st"
-        2 -> "nd"
-        3 -> "rd"
-        _ -> "th"
-    absN =
+    suffix = case absoluteValue `mod` 10 of
+      1 | absoluteValue `mod` 100 /= 11 -> "st"
+      2 | absoluteValue `mod` 100 /= 12 -> "nd"
+      3 | absoluteValue `mod` 100 /= 13 -> "rd"
+      _ -> "th"
+    absoluteValue =
       abs n
-    remander100 = 
-      absN `mod` 100
-    remander10 = 
-      absN `mod` 10
