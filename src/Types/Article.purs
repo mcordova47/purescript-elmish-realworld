@@ -45,4 +45,4 @@ instance decodeJsonArticle :: DecodeJson Article where
       , tagList
       , title
       , updatedAt
-        }
+      }
