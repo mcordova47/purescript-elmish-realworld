@@ -6,7 +6,9 @@ import Prelude
 
 import Elmish (ReactElement)
 import Elmish.HTML.Styled as H
-import Types.Article (Article)
+import Types.Article (Article(..))
+import Types.Author (Author(..))
+import Utils.DateTime as DateTime
 
 type Props r =
   { articles :: Array Article
@@ -51,23 +53,25 @@ view props =
   ]
 
 articlePreview :: Article -> ReactElement
-articlePreview article =
+articlePreview (Article article) =
   H.div "article-preview"
   [ H.div "article-meta"
     [ H.a_ "" { href: "profile.html" } $
-        H.img_ "" { src: article.image }
+        H.img_ "" { src: author.image }
     , H.div "info" $
-      [ H.a_ "author" { href: "" } article.author
-      , H.span "date" article.date
+      [ H.a_ "author" { href: "" } author.username
+      , H.span "date" $ DateTime.formatAsDate article.createdAt
       ]
     , H.button "btn btn-outline-primary btn-sm pull-xs-right"
       [ H.i "ion-heart" H.empty
-      , H.text $ " " <> show article.likes
+      , H.text $ " " <> show article.favoritesCount
       ]
     ]
   , H.a_ "preview-link" { href: "" }
     [ H.h1 "" article.title
-    , H.p "" article.description
+    , H.p "" article.body
     , H.span "" "Read more..."
     ]
   ]
+  where
+    Author author = article.author
