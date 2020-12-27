@@ -25,6 +25,7 @@ main =
 
 type State =
   { articles :: Array Article
+  , selectedTag :: Maybe String
   , tags :: Array String
   }
 
@@ -52,7 +53,7 @@ def =
             pure $ Just $ SetTags tagsResponse.tags
           Left err ->
             pure Nothing
-      pure { articles: [], tags: [] }
+      pure { articles: [], tags: [], selectedTag: Nothing }
 
     update :: State -> Message -> Transition m Message State
     update state = case _ of

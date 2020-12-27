@@ -4,6 +4,7 @@ module Home
 
 import Prelude
 
+import Data.Maybe (Maybe(..), isNothing)
 import Elmish (ReactElement)
 import Elmish.HTML.Styled as H
 import Types.Article (Article(..))
@@ -12,6 +13,7 @@ import Utils.DateTime as DateTime
 
 type Props r =
   { articles :: Array Article
+  , selectedTag :: Maybe String
   , tags :: Array String
   | r
   }
@@ -29,10 +31,11 @@ view props =
       [ H.div "col-md-9"
         [ H.div "feed-toggle" $
             H.ul "nav nav-pills outline-active"
-            [ H.li "nav-item" $
-                H.a_ "nav-link disabled" { href: "" } "Your Feed"
-            , H.li "nav-item" $
-                H.a_ "nav-link active" { href: "" } "Global Feed"
+            [ tab { active: false, disabled: true, label: "Your Feed" }
+            , tab { active: isNothing props.selectedTag, disabled: false, label: "Global Feed" }
+            , case props.selectedTag of
+                Just tag -> tab { active: false, disabled: true, label: tag }
+                Nothing -> H.empty
             ]
         , H.fragment $ articlePreview <$> props.articles
         ]
@@ -44,6 +47,13 @@ view props =
           ]
       ]
   ]
+
+tab :: { active :: Boolean, disabled :: Boolean, label :: String } -> ReactElement
+tab { active, disabled, label } =
+  H.li "nav-item" $
+    H.a_ ("nav-link" <> if active then " active" else "" <> if disabled then " disabled" else "")
+      { href: "" }
+      label
 
 articlePreview :: Article -> ReactElement
 articlePreview (Article article) =
@@ -64,6 +74,8 @@ articlePreview (Article article) =
     [ H.h1 "" article.title
     , H.p "" article.body
     , H.span "" "Read more..."
+    , H.ul "tag-list" $
+        H.li "tag-default tag-pill tag-outline" <$> article.tagList
     ]
   ]
   where
