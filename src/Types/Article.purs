@@ -13,6 +13,7 @@ newtype Article = Article
   { author :: Author
   , body :: String
   , createdAt :: DateTime
+  , description :: String
   , favorited :: Boolean
   , favoritesCount :: Int
   , slug :: String
@@ -26,6 +27,7 @@ instance decodeJsonArticle :: DecodeJson Article where
     obj <- decodeJson json
     author <- obj .: "author"
     body <- obj .: "body"
+    description <- obj .: "description"
     Iso createdAt <- obj .: "createdAt"
     favorited <- obj .: "favorited"
     favoritesCount <- obj .: "favoritesCount"
@@ -37,6 +39,7 @@ instance decodeJsonArticle :: DecodeJson Article where
       { author
       , body
       , createdAt
+      , description
       , favorited
       , favoritesCount
       , slug

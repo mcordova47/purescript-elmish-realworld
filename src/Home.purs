@@ -72,7 +72,7 @@ articlePreview (Article article) =
     ]
   , H.a_ "preview-link" { href: "" }
     [ H.h1 "" article.title
-    , H.p "" article.body
+    , H.p "" article.description
     , H.span "" "Read more..."
     , H.ul "tag-list" $
         H.li "tag-default tag-pill tag-outline" <$> article.tagList
