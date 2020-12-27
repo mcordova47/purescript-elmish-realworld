@@ -17,6 +17,7 @@ import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Foldable (notElem)
 import Data.Generic.Rep (class Generic)
+import Data.Maybe (Maybe, maybe)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (error)
 import Types.Article (Article)
@@ -40,9 +41,9 @@ instance decodeJsonArticlesResponse :: DecodeJson ArticlesResponse where
     articlesCount <- obj .: "articlesCount"
     pure $ ArticlesResponse { articles: articles', articlesCount }
 
-articles :: forall m. MonadAff m => m (Either Error ArticlesResponse)
-articles = liftAff do
-  res <- Affjax.get json $ baseUrl <> "/articles"
+articles :: forall m. MonadAff m => Maybe String -> m (Either Error ArticlesResponse)
+articles tag = liftAff do
+  res <- Affjax.get json $ baseUrl <> "/articles" <> maybe "" ("?tag=" <> _) tag
   pure $ res
     # lmap HttpError
     >>= \r ->
