@@ -2,19 +2,14 @@ module Main where
 
 import Prelude
 
-import Api (ArticlesResponse(..), TagsResponse(..))
-import Api as Api
-import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
-import Elmish (ComponentDef, DispatchMsgFn, ReactElement, Transition, forkMaybe)
+import Elmish (ComponentDef, DispatchMsgFn, ReactElement, Transition, bimap, lmap, (>#<))
 import Elmish.Boot (defaultMain)
 import Elmish.HTML.Styled as H
 import Footer as Footer
 import Header as Header
 import Home as Home
-import Types.Article (Article)
 
 main :: Effect Unit
 main =
@@ -24,14 +19,11 @@ main =
     }
 
 type State =
-  { articles :: Array Article
-  , selectedTag :: Maybe String
-  , tags :: Array String
+  { home :: Home.State
   }
 
 data Message
-  = SetArticles (Array Article)
-  | SetTags (Array String)
+  = HomeMsg Home.Message
 
 def :: forall m. MonadAff m => ComponentDef m Message State
 def =
@@ -39,32 +31,18 @@ def =
   where
     init :: Transition m Message State
     init = do
-      forkMaybe do
-        resp <- Api.articles
-        case resp of
-          Right (ArticlesResponse articlesResponse) ->
-            pure $ Just $ SetArticles articlesResponse.articles
-          Left err ->
-            pure Nothing
-      forkMaybe do
-        resp <- Api.tags
-        case resp of
-          Right (TagsResponse tagsResponse) ->
-            pure $ Just $ SetTags tagsResponse.tags
-          Left err ->
-            pure Nothing
-      pure { articles: [], tags: [], selectedTag: Nothing }
+      home <- Home.init # lmap HomeMsg
+      pure { home }
 
     update :: State -> Message -> Transition m Message State
     update state = case _ of
-      SetArticles articles ->
-        pure state { articles = articles }
-      SetTags tags ->
-        pure state { tags = tags }
+      HomeMsg msg ->
+        Home.update state.home msg
+        # bimap HomeMsg state { home = _ }
 
     view :: State -> DispatchMsgFn Message -> ReactElement
-    view state _ = H.fragment
+    view state dispatch = H.fragment
       [ Header.view
-      , Home.view state
+      , Home.view state.home (dispatch >#< HomeMsg)
       , Footer.view
       ]

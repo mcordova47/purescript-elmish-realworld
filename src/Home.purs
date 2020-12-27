@@ -1,25 +1,61 @@
 module Home
-  ( view
+  ( Message
+  , State
+  , init
+  , update
+  , view
   ) where
 
 import Prelude
 
+import Api (ArticlesResponse(..), TagsResponse(..))
+import Api as Api
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), isNothing)
-import Elmish (ReactElement)
+import Effect.Aff.Class (class MonadAff)
+import Elmish (DispatchMsgFn, ReactElement, Transition, forkMaybe)
 import Elmish.HTML.Styled as H
 import Types.Article (Article(..))
 import Types.Author (Author(..))
 import Utils.DateTime as DateTime
 
-type Props r =
+type State =
   { articles :: Array Article
   , selectedTag :: Maybe String
   , tags :: Array String
-  | r
   }
 
-view :: forall r. Props r -> ReactElement
-view props =
+data Message
+  = SetArticles (Array Article)
+  | SetTags (Array String)
+
+init :: forall m. MonadAff m => Transition m Message State
+init = do
+  forkMaybe do
+    resp <- Api.articles
+    case resp of
+      Right (ArticlesResponse articlesResponse) ->
+        pure $ Just $ SetArticles articlesResponse.articles
+      Left err ->
+        pure Nothing
+  forkMaybe do
+    resp <- Api.tags
+    case resp of
+      Right (TagsResponse tagsResponse) ->
+        pure $ Just $ SetTags tagsResponse.tags
+      Left err ->
+        pure Nothing
+  pure { articles: [], tags: [], selectedTag: Nothing }
+
+update :: forall m. Monad m => State -> Message -> Transition m Message State
+update state = case _ of
+  SetArticles articles ->
+    pure state { articles = articles }
+  SetTags tags ->
+    pure state { tags = tags }
+
+view :: State -> DispatchMsgFn Message -> ReactElement
+view props dispatch =
   H.div "home-page"
   [ H.div "banner" $
     H.div "container" $
