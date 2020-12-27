@@ -6,7 +6,6 @@ import Prelude
 
 import Data.Argonaut.Decode (class DecodeJson, decodeJson, (.:))
 import Data.DateTime (DateTime)
-import Data.Generic.Rep (class Generic)
 import Types.Author (Author)
 import Types.DateTime.Iso (Iso(..))
 
@@ -22,7 +21,6 @@ newtype Article = Article
   , updatedAt :: DateTime
   }
 
-derive instance gArticle :: Generic Article _
 instance decodeJsonArticle :: DecodeJson Article where
   decodeJson json = do
     obj <- decodeJson json

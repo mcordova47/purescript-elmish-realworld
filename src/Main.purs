@@ -2,7 +2,7 @@ module Main where
 
 import Prelude
 
-import Api (ArticlesResponse(..))
+import Api (ArticlesResponse(..), TagsResponse(..))
 import Api as Api
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
@@ -25,10 +25,12 @@ main =
 
 type State =
   { articles :: Array Article
+  , tags :: Array String
   }
 
 data Message
   = SetArticles (Array Article)
+  | SetTags (Array String)
 
 def :: forall m. MonadAff m => ComponentDef m Message State
 def =
@@ -43,12 +45,21 @@ def =
             pure $ Just $ SetArticles articlesResponse.articles
           Left err ->
             pure Nothing
-      pure { articles: [] }
+      forkMaybe do
+        resp <- Api.tags
+        case resp of
+          Right (TagsResponse tagsResponse) ->
+            pure $ Just $ SetTags tagsResponse.tags
+          Left err ->
+            pure Nothing
+      pure { articles: [], tags: [] }
 
     update :: State -> Message -> Transition m Message State
     update state = case _ of
       SetArticles articles ->
         pure state { articles = articles }
+      SetTags tags ->
+        pure state { tags = tags }
 
     view :: State -> DispatchMsgFn Message -> ReactElement
     view state _ = H.fragment

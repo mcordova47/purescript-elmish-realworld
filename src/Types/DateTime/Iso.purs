@@ -13,11 +13,6 @@ import Effect.Unsafe (unsafePerformEffect)
 
 newtype Iso = Iso DateTime
 
-derive newtype instance eqDateTime :: Eq Iso
-derive newtype instance ordDateTime :: Ord Iso
-derive newtype instance boundedDateTime :: Bounded Iso
-derive newtype instance showDateTime :: Show Iso
-
 instance decodeJsonIso :: DecodeJson Iso where
   decodeJson json = do
     dateString <- decodeJson json

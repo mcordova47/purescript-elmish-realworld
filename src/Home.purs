@@ -12,6 +12,7 @@ import Utils.DateTime as DateTime
 
 type Props r =
   { articles :: Array Article
+  , tags :: Array String
   | r
   }
 
@@ -38,16 +39,8 @@ view props =
       , H.div "col-md-3" $
           H.div "sidebar"
           [ H.p "" "Popular Tags"
-          , H.div "tag-list"
-            [ H.a_ "tag-pill tag-default" { href: "" } "programming"
-            , H.a_ "tag-pill tag-default" { href: "" } "javascript"
-            , H.a_ "tag-pill tag-default" { href: "" } "emberjs"
-            , H.a_ "tag-pill tag-default" { href: "" } "angularjs"
-            , H.a_ "tag-pill tag-default" { href: "" } "react"
-            , H.a_ "tag-pill tag-default" { href: "" } "mean"
-            , H.a_ "tag-pill tag-default" { href: "" } "node"
-            , H.a_ "tag-pill tag-default" { href: "" } "rails"
-            ]
+          , H.div "tag-list" $
+            H.a_ "tag-pill tag-default" { href: "" } <$> props.tags
           ]
       ]
   ]

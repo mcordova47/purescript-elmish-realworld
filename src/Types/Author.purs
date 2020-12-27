@@ -5,7 +5,6 @@ module Types.Author
 import Prelude
 
 import Data.Argonaut.Decode (class DecodeJson, decodeJson, (.:), (.:?))
-import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe)
 
 newtype Author = Author
@@ -15,7 +14,6 @@ newtype Author = Author
   , username :: String
   }
 
-derive instance gAuthor :: Generic Author _
 instance decodeJsonAuthor :: DecodeJson Author where
   decodeJson json = do
     obj <- decodeJson json
