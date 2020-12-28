@@ -13,15 +13,13 @@ import Api as Api
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), isJust, isNothing)
 import Effect.Aff.Class (class MonadAff)
-import Elmish (DispatchMsgFn, ReactElement, Transition, forkMaybe, jsCallback, (>#<))
-import Elmish.Dispatch (issueMsg)
+import Elmish (DispatchMsgFn, ReactElement, Transition, forkMaybe, (>#<))
 import Elmish.HTML.Styled as H
 import Elmish.React (class ReactChildren)
-import Foreign (Foreign)
 import Types.Article (Article(..))
 import Types.Author (Author(..))
-import Unsafe.Coerce (unsafeCoerce)
 import Utils.DateTime as DateTime
+import Utils.EventHandler as EventHandler
 
 type State =
   { articles :: Array Article
@@ -96,13 +94,10 @@ view props dispatch =
     tagLink tag =
       H.a_ "tag-pill tag-default"
         { href: ""
-        , onClick: hackyOnClick tag
+        , onClick: EventHandler.withEvent $
+            EventHandler.withPreventDefault $ dispatch >#< const (SelectTag tag)
         }
         tag
-    hackyOnClick tag = unsafeCoerce $
-      jsCallback \(e :: Foreign) -> do
-        _ :: Unit <- (unsafeCoerce e).preventDefault
-        issueMsg (dispatch >#< SelectTag) tag
 
 tab :: forall content. ReactChildren content => { active :: Boolean, disabled :: Boolean, label :: content } -> ReactElement
 tab { active, disabled, label } =
