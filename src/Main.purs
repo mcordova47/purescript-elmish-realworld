@@ -18,9 +18,8 @@ main =
     , def
     }
 
-type State =
-  { home :: Home.State
-  }
+data State
+  = Home Home.State
 
 data Message
   = HomeMsg Home.Message
@@ -32,17 +31,20 @@ def =
     init :: Transition m Message State
     init = do
       home <- Home.init # lmap HomeMsg
-      pure { home }
+      pure $ Home home
 
     update :: State -> Message -> Transition m Message State
-    update state = case _ of
-      HomeMsg msg ->
-        Home.update state.home msg
-        # bimap HomeMsg state { home = _ }
+    update state message = case message, state of
+      HomeMsg msg, Home home ->
+        Home.update home msg
+        # bimap HomeMsg Home
 
     view :: State -> DispatchMsgFn Message -> ReactElement
     view state dispatch = H.fragment
       [ Header.view
-      , Home.view state.home (dispatch >#< HomeMsg)
+      , body
       , Footer.view
       ]
+      where
+        body = case state of
+          Home home -> Home.view home (dispatch >#< HomeMsg)
