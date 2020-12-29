@@ -10,6 +10,7 @@ import Prelude
 
 import Api (ArticlesResponse(..), TagsResponse(..))
 import Api as Api
+import Data.Array ((..))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), isJust, isNothing)
 import Effect.Aff.Class (class MonadAff)
@@ -23,18 +24,29 @@ import Utils.EventHandler as EventHandler
 
 type State =
   { articles :: Array Article
+  , page :: Int
   , selectedTag :: Maybe String
   , tags :: Array String
+  , totalPages :: Int
   }
 
 data Message
-  = SetArticles (Array Article)
+  = SetArticles ArticlesResponse
+  | SelectPage Int
   | SelectTag String
   | SetTags (Array String)
 
 init :: forall m. MonadAff m => Transition m Message State
 init = do
-  fetchArticles Nothing
+  let
+    initialState =
+      { articles: []
+      , page: 1
+      , selectedTag: Nothing
+      , tags: []
+      , totalPages: 0
+      }
+  fetchArticles initialState
   forkMaybe do
     resp <- Api.tags
     case resp of
@@ -42,20 +54,28 @@ init = do
         pure $ Just $ SetTags tagsResponse.tags
       Left err ->
         pure Nothing
-  pure { articles: [], tags: [], selectedTag: Nothing }
+  pure initialState
 
 update :: forall m. MonadAff m => State -> Message -> Transition m Message State
 update state = case _ of
-  SetArticles articles ->
-    pure state { articles = articles }
+  SetArticles (ArticlesResponse articlesResponse) ->
+    pure state
+      { articles = articlesResponse.articles
+      , totalPages = articlesResponse.articlesCount / pageLimit
+      }
+  SelectPage page -> do
+    let state' = state { page = page }
+    fetchArticles state'
+    pure state'
   SelectTag tag -> do
-    fetchArticles (Just tag)
-    pure state { selectedTag = Just tag }
+    let state' = state { selectedTag = Just tag }
+    fetchArticles state'
+    pure state'
   SetTags tags ->
     pure state { tags = tags }
 
 view :: State -> DispatchMsgFn Message -> ReactElement
-view props dispatch =
+view state dispatch =
   H.div "home-page"
   [ H.div "banner" $
     H.div "container" $
@@ -68,10 +88,10 @@ view props dispatch =
         [ H.div "feed-toggle" $
             H.ul "nav nav-pills outline-active"
             [ tab { active: false, disabled: true, label: "Your Feed" }
-            , tab { active: isNothing props.selectedTag, disabled: false, label: "Global Feed" }
-            , case props.selectedTag of
+            , tab { active: isNothing state.selectedTag, disabled: false, label: "Global Feed" }
+            , case state.selectedTag of
                 Just tag -> tab
-                  { active: isJust props.selectedTag
+                  { active: isJust state.selectedTag
                   , disabled: false
                   , label:
                       [ H.i "ion-pound" H.empty
@@ -80,13 +100,16 @@ view props dispatch =
                   }
                 Nothing -> H.empty
             ]
-        , H.fragment $ articlePreview <$> props.articles
+        , H.fragment $ articlePreview <$> state.articles
+        , H.nav "" $
+            H.ul "pagination" $
+              pageLink <$> allPages
         ]
       , H.div "col-md-3" $
           H.div "sidebar"
           [ H.p "" "Popular Tags"
           , H.div "tag-list" $
-              tagLink <$> props.tags
+              tagLink <$> state.tags
           ]
       ]
   ]
@@ -98,6 +121,19 @@ view props dispatch =
             EventHandler.withPreventDefault $ dispatch >#< const (SelectTag tag)
         }
         tag
+
+    pageLink page =
+      H.li ("page-item" <> if page == state.page then " active" else "") $
+        H.a_ "page-link"
+          { href: ""
+          , onClick: EventHandler.withEvent $
+              EventHandler.withPreventDefault $ dispatch >#< const (SelectPage page)
+          } $
+          show page
+
+    allPages = case state.totalPages of
+      0 -> []
+      _ -> 1..state.totalPages
 
 tab :: forall content. ReactChildren content => { active :: Boolean, disabled :: Boolean, label :: content } -> ReactElement
 tab { active, disabled, label } =
@@ -132,11 +168,18 @@ articlePreview (Article article) =
   where
     Author author = article.author
 
-fetchArticles :: forall m. MonadAff m => Maybe String -> Transition m Message Unit
-fetchArticles tag = forkMaybe do
-  resp <- Api.articles tag
+fetchArticles :: forall m. MonadAff m => State -> Transition m Message Unit
+fetchArticles state = forkMaybe do
+  resp <- Api.articles
+    { limit: Just pageLimit
+    , offset: Just $ (state.page - 1) * pageLimit
+    , tag: state.selectedTag
+    }
   case resp of
-    Right (ArticlesResponse articlesResponse) ->
-      pure $ Just $ SetArticles articlesResponse.articles
+    Right articlesResponse ->
+      pure $ Just $ SetArticles articlesResponse
     Left err ->
       pure Nothing
+
+pageLimit :: Int
+pageLimit = 10

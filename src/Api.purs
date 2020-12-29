@@ -13,11 +13,12 @@ import Affjax.ResponseFormat (json)
 import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError, decodeJson, (.:))
+import Data.Array (catMaybes)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
-import Data.Foldable (notElem)
+import Data.Foldable (intercalate, notElem)
 import Data.Generic.Rep (class Generic)
-import Data.Maybe (Maybe, maybe)
+import Data.Maybe (Maybe)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (error)
 import Types.Article (Article)
@@ -41,9 +42,15 @@ instance decodeJsonArticlesResponse :: DecodeJson ArticlesResponse where
     articlesCount <- obj .: "articlesCount"
     pure $ ArticlesResponse { articles: articles', articlesCount }
 
-articles :: forall m. MonadAff m => Maybe String -> m (Either Error ArticlesResponse)
-articles tag = liftAff do
-  res <- Affjax.get json $ baseUrl <> "/articles" <> maybe "" ("?tag=" <> _) tag
+type ArticlesRequest =
+  { limit :: Maybe Int
+  , offset :: Maybe Int
+  , tag :: Maybe String
+  }
+
+articles :: forall m. MonadAff m => ArticlesRequest -> m (Either Error ArticlesResponse)
+articles { limit, offset, tag} = liftAff do
+  res <- Affjax.get json $ baseUrl <> "/articles" <> query
   pure $ res
     # lmap HttpError
     >>= \r ->
@@ -55,8 +62,13 @@ articles tag = liftAff do
         then Left $ HttpError $ Affjax.XHRError $ error $ show r.status
         else lmap ParseError $ responseBody r
   where
-    responseBody :: Affjax.Response Json -> Either JsonDecodeError ArticlesResponse
-    responseBody r =  decodeJson r.body
+    responseBody r = decodeJson r.body
+
+    query = queryString $ catMaybes
+      [ { key: "limit", value: _ } <<< show <$> limit
+      , { key: "offset", value: _ } <<< show <$> offset
+      , { key: "tag", value: _ } <$> tag
+      ]
 
 newtype TagsResponse = TagsResponse
   { tags :: Array String
@@ -84,3 +96,10 @@ tags = liftAff do
   where
     responseBody :: Affjax.Response Json -> Either JsonDecodeError TagsResponse
     responseBody r =  decodeJson r.body
+
+queryString :: Array { key :: String, value :: String } -> String
+queryString [] = ""
+queryString params = params
+  <#> (\{ key, value } -> key <> "=" <> value)
+  # intercalate "&"
+  # ("?" <> _)
