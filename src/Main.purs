@@ -5,12 +5,16 @@ import Prelude
 import Article as Article
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
-import Elmish (ComponentDef, DispatchMsgFn, ReactElement, Transition, bimap, lmap, (>#<))
+import Effect.Class (liftEffect)
+import Elmish (ComponentDef, DispatchMsgFn, ReactElement, Transition, bimap, forkVoid, lmap, (>#<))
 import Elmish.Boot (defaultMain)
 import Elmish.HTML.Styled as H
 import Footer as Footer
 import Header as Header
 import Home as Home
+import Web.HTML (window)
+import Web.HTML.Location (hash)
+import Web.HTML.Window (location)
 
 main :: Effect Unit
 main =
@@ -33,10 +37,13 @@ def =
   where
     init :: Transition m Message State
     init = do
-      -- home <- Home.init # lmap HomeMsg
-      -- pure $ Home home
-      article <- Article.init "g-rspj2w" # lmap ArticleMsg
-      pure $ Article article
+      forkVoid $ liftEffect do
+        route <- window >>= location >>= hash
+        pure unit
+      home <- Home.init # lmap HomeMsg
+      pure $ Home home
+      -- article <- Article.init "g-rspj2w" # lmap ArticleMsg
+      -- pure $ Article article
 
     update :: State -> Message -> Transition m Message State
     update state message = case message, state of

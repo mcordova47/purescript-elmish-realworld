@@ -54,6 +54,7 @@ view state _ = case state.article of
               H.img_ "" { src: author.image }
           , H.div "info"
             [ H.a_ "author" { href: "" } author.username
+            -- TODO: Different date format
             , H.span "date" $ DateTime.formatAsDate article.createdAt
             ]
           , H.button "btn btn-sm btn-outline-secondary"
@@ -74,31 +75,34 @@ view state _ = case state.article of
         ]
     , H.div "container page"
       [ H.div "row article-content" $
-          H.div "col-md-12" $
-            -- TODO: Formatting
-            H.p "" article.body
+          H.div "col-md-12"
+          [ H.div "" $
+              -- TODO: Formatting
+              H.p "" article.body
+          , H.ul "tag-list" $
+              H.li "tag-default tag-pill tag-outline" <$> article.tagList
+          ]
       ]
     , H.hr ""
     , H.div "article-actions" $
         H.div "article-meta"
         [ H.a_ "" { href: "profile.html" } $
-            H.img_ "" { src: "http://i.imgur.com/Qr71crq.jpg" }
+            H.img_ "" { src: author.image }
         , H.div "info"
-          [ H.a_ "author" { href: "" } "Eric Simons"
-          , H.span "date" "January 20th"
+          [ H.a_ "author" { href: "" } author.username
+          , H.span "date" $ DateTime.formatAsDate article.createdAt
           ]
         , H.button "btn btn-sm btn-outline-secondary"
           [ H.i "ion-plus-round" H.empty
           , Html.nbsp
-          , H.text "Follow Eric Simons"
-          , H.span "counter" "(10)"
+          , H.text $ "Follow " <> author.username
           ]
         , Html.nbsp
         , H.button "btn btn-sm btn-outline-primary"
           [ H.i "ion-heart" H.empty
           , Html.nbsp
           , H.text "Favorite Post"
-          , H.span "counter" "(29)"
+          , H.span "counter" $ " (" <> show article.favoritesCount <> ")"
           ]
         ]
     , H.div "row" $
