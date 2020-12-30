@@ -1,7 +1,9 @@
 module Api
-  ( ArticlesResponse(..)
+  ( ArticleResponse(..)
+  , ArticlesResponse(..)
   , Error(..)
   , TagsResponse(..)
+  , article
   , articles
   , tags
   ) where
@@ -17,7 +19,6 @@ import Data.Array (catMaybes)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Foldable (intercalate, notElem)
-import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (error)
@@ -30,23 +31,22 @@ data Error
 baseUrl :: String
 baseUrl = "https://conduit.productionready.io/api"
 
+type ArticlesRequest =
+  { limit :: Maybe Int
+  , offset :: Maybe Int
+  , tag :: Maybe String
+  }
+
 newtype ArticlesResponse = ArticlesResponse
   { articles :: Array Article
   , articlesCount :: Int
   }
-derive instance gArticlesResponse :: Generic ArticlesResponse _
 instance decodeJsonArticlesResponse :: DecodeJson ArticlesResponse where
   decodeJson json = do
     obj <- decodeJson json
     articles' <- obj .: "articles"
     articlesCount <- obj .: "articlesCount"
     pure $ ArticlesResponse { articles: articles', articlesCount }
-
-type ArticlesRequest =
-  { limit :: Maybe Int
-  , offset :: Maybe Int
-  , tag :: Maybe String
-  }
 
 articles :: forall m. MonadAff m => ArticlesRequest -> m (Either Error ArticlesResponse)
 articles { limit, offset, tag} = liftAff do
@@ -70,10 +70,34 @@ articles { limit, offset, tag} = liftAff do
       , { key: "tag", value: _ } <$> tag
       ]
 
+newtype ArticleResponse = ArticleResponse
+  { article :: Article
+  }
+instance decodeJsonArticleResponse :: DecodeJson ArticleResponse where
+  decodeJson json = do
+    obj <- decodeJson json
+    article' <- obj .: "article"
+    pure $ ArticleResponse { article: article' }
+
+article :: forall m. MonadAff m => String -> m (Either Error ArticleResponse)
+article slug = liftAff do
+  res <- Affjax.get json $ baseUrl <> "/articles/" <> slug
+  pure $ res
+    # lmap HttpError
+    >>= \r ->
+      -- Turns out, Affjax doesn't report some error codes as errors. One example
+      -- I discovered is 403. So we turn non-200 codes into errors here. 200
+      -- should be enough for us for now, and we can always generalize this logic
+      -- later.
+      if r.status `notElem` [StatusCode 200, StatusCode 204]
+        then Left $ HttpError $ Affjax.XHRError $ error $ show r.status
+        else lmap ParseError $ responseBody r
+  where
+    responseBody r = decodeJson r.body
+
 newtype TagsResponse = TagsResponse
   { tags :: Array String
   }
-derive instance gTagsResponse :: Generic TagsResponse _
 instance decodeJsonTagsResponse :: DecodeJson TagsResponse where
   decodeJson json = do
     obj <- decodeJson json

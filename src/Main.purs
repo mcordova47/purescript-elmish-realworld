@@ -2,6 +2,7 @@ module Main where
 
 import Prelude
 
+import Article as Article
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Elmish (ComponentDef, DispatchMsgFn, ReactElement, Transition, bimap, lmap, (>#<))
@@ -19,10 +20,12 @@ main =
     }
 
 data State
-  = Home Home.State
+  = Article Article.State
+  | Home Home.State
 
 data Message
-  = HomeMsg Home.Message
+  = ArticleMsg Article.Message
+  | HomeMsg Home.Message
 
 def :: forall m. MonadAff m => ComponentDef m Message State
 def =
@@ -30,14 +33,23 @@ def =
   where
     init :: Transition m Message State
     init = do
-      home <- Home.init # lmap HomeMsg
-      pure $ Home home
+      -- home <- Home.init # lmap HomeMsg
+      -- pure $ Home home
+      article <- Article.init "g-rspj2w" # lmap ArticleMsg
+      pure $ Article article
 
     update :: State -> Message -> Transition m Message State
     update state message = case message, state of
       HomeMsg msg, Home home ->
         Home.update home msg
         # bimap HomeMsg Home
+      HomeMsg msg, _ ->
+        pure state
+      ArticleMsg msg, Article article ->
+        Article.update article msg
+        # bimap ArticleMsg Article
+      ArticleMsg msg, _ ->
+        pure state
 
     view :: State -> DispatchMsgFn Message -> ReactElement
     view state dispatch = H.fragment
@@ -48,3 +60,4 @@ def =
       where
         body = case state of
           Home home -> Home.view home (dispatch >#< HomeMsg)
+          Article article -> Article.view article (dispatch >#< ArticleMsg)
