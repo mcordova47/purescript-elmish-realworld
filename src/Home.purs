@@ -17,6 +17,7 @@ import Effect.Aff.Class (class MonadAff)
 import Elmish (DispatchMsgFn, ReactElement, Transition, forkMaybe, (>#<))
 import Elmish.HTML.Styled as H
 import Elmish.React (class ReactChildren)
+import Router as Router
 import Types.Article (Article(..))
 import Types.Author (Author(..))
 import Utils.DateTime as DateTime
@@ -157,7 +158,7 @@ articlePreview (Article article) =
       , H.text $ " " <> show article.favoritesCount
       ]
     ]
-  , H.a_ "preview-link" { href: "" }
+  , H.a_ "preview-link" { href: Router.print $ Router.Article article.slug }
     [ H.h1 "" article.title
     , H.p "" article.description
     , H.span "" "Read more..."
