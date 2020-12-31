@@ -1,5 +1,7 @@
 module Home
-  ( Message
+  ( ExternalMessage(..)
+  , InternalMessage
+  , Message
   , State
   , init
   , update
@@ -31,11 +33,16 @@ type State =
   , totalPages :: Int
   }
 
-data Message
+type Message = Either InternalMessage ExternalMessage
+
+data InternalMessage
   = SetArticles ArticlesResponse
   | SelectPage Int
   | SelectTag String
   | SetTags (Array String)
+
+data ExternalMessage
+  = SelectArticle Article
 
 init :: forall m. MonadAff m => Transition m Message State
 init = do
@@ -52,28 +59,30 @@ init = do
     resp <- Api.tags
     case resp of
       Right (TagsResponse tagsResponse) ->
-        pure $ Just $ SetTags tagsResponse.tags
+        pure $ Just $ Left $ SetTags tagsResponse.tags
       Left err ->
         pure Nothing
   pure initialState
 
 update :: forall m. MonadAff m => State -> Message -> Transition m Message State
 update state = case _ of
-  SetArticles (ArticlesResponse articlesResponse) ->
+  Left (SetArticles (ArticlesResponse articlesResponse)) ->
     pure state
       { articles = articlesResponse.articles
       , totalPages = articlesResponse.articlesCount / pageLimit
       }
-  SelectPage page -> do
+  Left (SelectPage page) -> do
     let state' = state { page = page }
     fetchArticles state'
     pure state'
-  SelectTag tag -> do
+  Left (SelectTag tag) -> do
     let state' = state { selectedTag = Just tag }
     fetchArticles state'
     pure state'
-  SetTags tags ->
+  Left (SetTags tags) ->
     pure state { tags = tags }
+  Right _ ->
+    pure state
 
 view :: State -> DispatchMsgFn Message -> ReactElement
 view state dispatch =
@@ -101,7 +110,7 @@ view state dispatch =
                   }
                 Nothing -> H.empty
             ]
-        , H.fragment $ articlePreview <$> state.articles
+        , H.fragment $ articlePreview dispatch <$> state.articles
         , H.nav "" $
             H.ul "pagination" $
               pageLink <$> allPages
@@ -119,7 +128,7 @@ view state dispatch =
       H.a_ "tag-pill tag-default"
         { href: ""
         , onClick: EventHandler.withEvent $
-            EventHandler.withPreventDefault $ dispatch >#< const (SelectTag tag)
+            EventHandler.withPreventDefault $ dispatch >#< const (Left $ SelectTag tag)
         }
         tag
 
@@ -128,7 +137,7 @@ view state dispatch =
         H.a_ "page-link"
           { href: ""
           , onClick: EventHandler.withEvent $
-              EventHandler.withPreventDefault $ dispatch >#< const (SelectPage page)
+              EventHandler.withPreventDefault $ dispatch >#< const (Left $ SelectPage page)
           } $
           show page
 
@@ -143,8 +152,8 @@ tab { active, disabled, label } =
       { href: "" }
       label
 
-articlePreview :: Article -> ReactElement
-articlePreview (Article article) =
+articlePreview :: DispatchMsgFn Message -> Article -> ReactElement
+articlePreview dispatch a@(Article article) =
   H.div "article-preview"
   [ H.div "article-meta"
     [ H.a_ "" { href: "profile.html" } $
@@ -159,7 +168,11 @@ articlePreview (Article article) =
       ]
     ]
   -- TODO: Dispatch message to route to the article so as not to reload
-  , H.a_ "preview-link" { href: Router.print $ Router.Article article.slug }
+  , H.a_ "preview-link"
+    { href: Router.print $ Router.Article article.slug
+    , onClick: EventHandler.withEvent $
+        EventHandler.withPreventDefault $ dispatch >#< const (Right $ SelectArticle a)
+    }
     [ H.h1 "" article.title
     , H.p "" article.description
     , H.span "" "Read more..."
@@ -179,7 +192,7 @@ fetchArticles state = forkMaybe do
     }
   case resp of
     Right articlesResponse ->
-      pure $ Just $ SetArticles articlesResponse
+      pure $ Just $ Left $ SetArticles articlesResponse
     Left err ->
       pure Nothing
 

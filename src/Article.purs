@@ -10,7 +10,7 @@ import Prelude
 
 import Api as Api
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isNothing)
 import Effect.Aff.Class (class MonadAff)
 import Elmish (DispatchMsgFn, ReactElement, Transition, forkMaybe)
 import Elmish.HTML.Styled as H
@@ -26,16 +26,21 @@ type State =
 data Message
   = SetArticle Article
 
-init :: forall m. MonadAff m => String -> Transition m Message State
-init slug = do
-  forkMaybe do
-    resp <- Api.article slug
+type Args =
+  { article :: Maybe Article
+  , slug :: String
+  }
+
+init :: forall m. MonadAff m => Args -> Transition m Message State
+init args = do
+  when (isNothing args.article) $ forkMaybe do
+    resp <- Api.article args.slug
     case resp of
       Right (Api.ArticleResponse { article }) ->
         pure $ Just $ SetArticle article
       Left err ->
         pure Nothing
-  pure { article: Nothing }
+  pure { article: args.article }
 
 update :: forall m. Monad m => State -> Message -> Transition m Message State
 update state = case _ of
