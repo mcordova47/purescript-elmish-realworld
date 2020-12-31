@@ -71,25 +71,22 @@ def =
         # bimap HomeMsg Home
       HomeMsg msg, _ ->
         pure state
-      SetRoute route, _ ->
-        setRoute route
-      where
-        setRoute route = do
-          forkVoid $ liftEffect do
-            let newHash = Router.print route
-            currentHash <- window >>= location >>= hash
-            when (currentHash /= newHash) $
-              window >>= history >>= History.pushState
-                (unsafeToForeign Nullable.null)
-                (History.DocumentTitle "Conduit")
-                (History.URL newHash)
-          case route of
-            Router.Home -> do
-              home <- Home.init # lmap HomeMsg
-              pure $ Home home
-            Router.Article slug -> do
-              article <- Article.init slug # lmap ArticleMsg
-              pure $ Article article
+      SetRoute route, _ -> do
+        forkVoid $ liftEffect do
+          let newHash = Router.print route
+          currentHash <- window >>= location >>= hash
+          when (currentHash /= newHash) $
+            window >>= history >>= History.pushState
+              (unsafeToForeign Nullable.null)
+              (History.DocumentTitle "Conduit")
+              (History.URL newHash)
+        case route of
+          Router.Home -> do
+            home <- Home.init # lmap HomeMsg
+            pure $ Home home
+          Router.Article slug -> do
+            article <- Article.init slug # lmap ArticleMsg
+            pure $ Article article
 
     view :: State -> DispatchMsgFn Message -> ReactElement
     view state dispatch = H.fragment
