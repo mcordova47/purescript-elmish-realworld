@@ -167,9 +167,9 @@ articlePreview dispatch a@(Article article) =
       , H.text $ " " <> show article.favoritesCount
       ]
     ]
-  -- TODO: Dispatch message to route to the article so as not to reload
   , H.a_ "preview-link"
     { href: Router.print $ Router.Article article.slug
+    -- Dispatch message to route to the article so we don’t have to re-fetch article details
     , onClick: EventHandler.withEvent $
         EventHandler.withPreventDefault $ dispatch >#< const (Right $ SelectArticle a)
     }
