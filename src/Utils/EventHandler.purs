@@ -12,8 +12,8 @@ import Foreign (Foreign)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | Some event handlers in Elmish don’t take event arguments (like onClick).
--- `withEvent` allows an event handler with an event argument to act like an
--- event without an event argument to satisfy the type checker.
+-- | `withEvent` allows an event handler with an event argument to act like an
+-- | event handler without an event argument to satisfy the type checker.
 withEvent :: JsCallback (Foreign -> Effect Unit) -> JsCallback (Effect Unit)
 withEvent = unsafeCoerce
 
