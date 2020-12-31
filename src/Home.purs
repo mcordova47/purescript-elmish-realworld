@@ -158,6 +158,7 @@ articlePreview (Article article) =
       , H.text $ " " <> show article.favoritesCount
       ]
     ]
+  -- TODO: Dispatch message to route to the article so as not to reload
   , H.a_ "preview-link" { href: Router.print $ Router.Article article.slug }
     [ H.h1 "" article.title
     , H.p "" article.description
