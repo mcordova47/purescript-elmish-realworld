@@ -110,7 +110,7 @@ view state dispatch =
                   }
                 Nothing -> H.empty
             ]
-        , H.fragment $ articlePreview dispatch <$> state.articles
+        , H.fragment $ articlePreview <$> state.articles
         , H.nav "" $
             H.ul "pagination" $
               pageLink <$> allPages
@@ -145,43 +145,46 @@ view state dispatch =
       0 -> []
       _ -> 1..state.totalPages
 
-tab :: forall content. ReactChildren content => { active :: Boolean, disabled :: Boolean, label :: content } -> ReactElement
-tab { active, disabled, label } =
-  H.li "nav-item" $
-    H.a_ ("nav-link" <> if active then " active" else "" <> if disabled then " disabled" else "")
-      { href: "" }
-      label
+    -- Type signature needed to make `content` polymorphic
+    tab :: forall content.
+      ReactChildren content =>
+      { active :: Boolean, disabled :: Boolean, label :: content } ->
+      ReactElement
+    tab { active, disabled, label } =
+      H.li "nav-item" $
+        H.a_ ("nav-link" <> if active then " active" else "" <> if disabled then " disabled" else "")
+          { href: "" }
+          label
 
-articlePreview :: DispatchMsgFn Message -> Article -> ReactElement
-articlePreview dispatch a@(Article article) =
-  H.div "article-preview"
-  [ H.div "article-meta"
-    [ H.a_ "" { href: "profile.html" } $
-        H.img_ "" { src: author.image }
-    , H.div "info" $
-      [ H.a_ "author" { href: "" } author.username
-      , H.span "date" $ DateTime.formatAsDate article.createdAt
+    articlePreview article@(Article { author: Author author, createdAt, description, favoritesCount, slug, tagList, title }) =
+      H.div "article-preview"
+      [ H.div "article-meta"
+        [ H.a_ "" { href: "profile.html" } $
+            H.img_ "" { src: author.image }
+        , H.div "info" $
+          [ H.a_ "author" { href: "" } author.username
+          , H.span "date" $ DateTime.formatAsDate createdAt
+          ]
+        , H.button "btn btn-outline-primary btn-sm pull-xs-right"
+          [ H.i "ion-heart" H.empty
+          , H.text $ " " <> show favoritesCount
+          ]
+        ]
+      , H.a_ "preview-link"
+        { href: Router.print $ Router.Article slug
+        -- Without the click event, this link would route to the article page,
+        -- but we would have to re-fetch article details because the route only
+        -- knows about the article’s slug.
+        , onClick: EventHandler.withEvent $
+            EventHandler.withPreventDefault $ dispatch >#< const (Right $ SelectArticle article)
+        }
+        [ H.h1 "" title
+        , H.p "" description
+        , H.span "" "Read more..."
+        , H.ul "tag-list" $
+            H.li "tag-default tag-pill tag-outline" <$> tagList
+        ]
       ]
-    , H.button "btn btn-outline-primary btn-sm pull-xs-right"
-      [ H.i "ion-heart" H.empty
-      , H.text $ " " <> show article.favoritesCount
-      ]
-    ]
-  , H.a_ "preview-link"
-    { href: Router.print $ Router.Article article.slug
-    -- Dispatch message to route to the article so we don’t have to re-fetch article details
-    , onClick: EventHandler.withEvent $
-        EventHandler.withPreventDefault $ dispatch >#< const (Right $ SelectArticle a)
-    }
-    [ H.h1 "" article.title
-    , H.p "" article.description
-    , H.span "" "Read more..."
-    , H.ul "tag-list" $
-        H.li "tag-default tag-pill tag-outline" <$> article.tagList
-    ]
-  ]
-  where
-    Author author = article.author
 
 fetchArticles :: forall m. MonadAff m => State -> Transition m Message Unit
 fetchArticles state = forkMaybe do
