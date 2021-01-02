@@ -83,7 +83,6 @@ view state _ = case state.article of
       [ H.div "row article-content" $
           H.div "col-md-12"
           [ H.div "" $
-              -- TODO: Formatting
               reactMarkdown {} article.body
           , H.ul "tag-list" $
               H.li "tag-default tag-pill tag-outline" <$> article.tagList
