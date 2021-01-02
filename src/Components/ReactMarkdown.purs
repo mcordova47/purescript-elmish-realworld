@@ -1,4 +1,4 @@
-module ReactMarkdown
+module Components.ReactMarkdown
   ( reactMarkdown
   ) where
 

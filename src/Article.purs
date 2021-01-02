@@ -9,12 +9,12 @@ module Article
 import Prelude
 
 import Api as Api
+import Components.ReactMarkdown (reactMarkdown)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), isNothing)
 import Effect.Aff.Class (class MonadAff)
 import Elmish (DispatchMsgFn, ReactElement, Transition, forkMaybe)
 import Elmish.HTML.Styled as H
-import ReactMarkdown (reactMarkdown)
 import Types.Article (Article(..))
 import Types.Author (Author(..))
 import Utils.DateTime as DateTime
