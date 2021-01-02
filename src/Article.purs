@@ -14,6 +14,7 @@ import Data.Maybe (Maybe(..), isNothing)
 import Effect.Aff.Class (class MonadAff)
 import Elmish (DispatchMsgFn, ReactElement, Transition, forkMaybe)
 import Elmish.HTML.Styled as H
+import ReactMarkdown (reactMarkdown)
 import Types.Article (Article(..))
 import Types.Author (Author(..))
 import Utils.DateTime as DateTime
@@ -83,7 +84,7 @@ view state _ = case state.article of
           H.div "col-md-12"
           [ H.div "" $
               -- TODO: Formatting
-              H.p "" article.body
+              reactMarkdown {} article.body
           , H.ul "tag-list" $
               H.li "tag-default tag-pill tag-outline" <$> article.tagList
           ]
