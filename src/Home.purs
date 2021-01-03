@@ -156,33 +156,33 @@ view state dispatch =
           { href: "" }
           label
 
-    articlePreview article@(Article { author: Profile author, createdAt, description, favoritesCount, slug, tagList, title }) =
+    articlePreview article@(Article article'@{ author: Profile author }) =
       H.div "article-preview"
       [ H.div "article-meta"
         [ H.a_ "" { href: "profile.html" } $
             H.img_ "" { src: author.image }
         , H.div "info" $
           [ H.a_ "author" { href: "" } author.username
-          , H.span "date" $ DateTime.formatAsDate createdAt
+          , H.span "date" $ DateTime.formatAsDate article'.createdAt
           ]
         , H.button "btn btn-outline-primary btn-sm pull-xs-right"
           [ H.i "ion-heart" H.empty
-          , H.text $ " " <> show favoritesCount
+          , H.text $ " " <> show article'.favoritesCount
           ]
         ]
       , H.a_ "preview-link"
-        { href: Router.print $ Router.Article slug
+        { href: Router.print $ Router.Article article'.slug
         -- Without the click event, this link would route to the article page,
         -- but we would have to re-fetch article details because the route only
         -- knows about the article’s slug.
         , onClick: EventHandler.withEvent $
             EventHandler.withPreventDefault $ dispatch >#< const (Right $ SelectArticle article)
         }
-        [ H.h1 "" title
-        , H.p "" description
+        [ H.h1 "" article'.title
+        , H.p "" article'.description
         , H.span "" "Read more..."
         , H.ul "tag-list" $
-            H.li "tag-default tag-pill tag-outline" <$> tagList
+            H.li "tag-default tag-pill tag-outline" <$> article'.tagList
         ]
       ]
 
