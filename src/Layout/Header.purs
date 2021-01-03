@@ -1,4 +1,4 @@
-module Header
+module Layout.Header
   ( view
   ) where
 

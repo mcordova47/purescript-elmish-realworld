@@ -1,4 +1,4 @@
-module Article
+module Pages.Article
   ( Message
   , State
   , init

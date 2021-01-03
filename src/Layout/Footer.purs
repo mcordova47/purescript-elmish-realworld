@@ -1,4 +1,4 @@
-module Footer
+module Layout.Footer
   ( view
   ) where
 

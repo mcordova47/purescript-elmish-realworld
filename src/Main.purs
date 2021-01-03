@@ -2,7 +2,6 @@ module Main where
 
 import Prelude
 
-import Article as Article
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable as Nullable
@@ -12,10 +11,11 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Elmish (ComponentDef, DispatchMsgFn, ReactElement, Transition, bimap, forkMaybe, forkVoid, forks, lmap, (>#<))
 import Elmish.Boot (defaultMain)
 import Elmish.HTML.Styled as H
-import Footer as Footer
 import Foreign (unsafeToForeign)
-import Header as Header
-import Home as Home
+import Layout.Footer as Footer
+import Layout.Header as Header
+import Pages.Article as Article
+import Pages.Home as Home
 import Router (Route)
 import Router as Router
 import Types.Article as Types

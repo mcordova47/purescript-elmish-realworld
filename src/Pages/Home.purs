@@ -1,4 +1,4 @@
-module Home
+module Pages.Home
   ( ExternalMessage(..)
   , InternalMessage
   , Message
