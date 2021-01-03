@@ -6,11 +6,11 @@ import Prelude
 
 import Data.Argonaut.Decode (class DecodeJson, decodeJson, (.:))
 import Data.DateTime (DateTime)
-import Types.Author (Author)
 import Types.DateTime.Iso (Iso(..))
+import Types.Profile (Profile)
 
 newtype Article = Article
-  { author :: Author
+  { author :: Profile
   , body :: String
   , createdAt :: DateTime
   , description :: String

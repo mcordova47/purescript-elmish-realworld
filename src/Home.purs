@@ -21,7 +21,7 @@ import Elmish.HTML.Styled as H
 import Elmish.React (class ReactChildren)
 import Router as Router
 import Types.Article (Article(..))
-import Types.Author (Author(..))
+import Types.Profile (Profile(..))
 import Utils.DateTime as DateTime
 import Utils.EventHandler as EventHandler
 
@@ -156,7 +156,7 @@ view state dispatch =
           { href: "" }
           label
 
-    articlePreview article@(Article { author: Author author, createdAt, description, favoritesCount, slug, tagList, title }) =
+    articlePreview article@(Article { author: Profile author, createdAt, description, favoritesCount, slug, tagList, title }) =
       H.div "article-preview"
       [ H.div "article-meta"
         [ H.a_ "" { href: "profile.html" } $

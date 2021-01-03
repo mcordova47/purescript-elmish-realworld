@@ -1,5 +1,5 @@
-module Types.Author
-  ( Author(..)
+module Types.Profile
+  ( Profile(..)
   ) where
 
 import Prelude
@@ -7,21 +7,21 @@ import Prelude
 import Data.Argonaut.Decode (class DecodeJson, decodeJson, (.:), (.:?))
 import Data.Maybe (Maybe)
 
-newtype Author = Author
+newtype Profile = Profile
   { bio :: Maybe String
   , following :: Boolean
   , image :: String
   , username :: String
   }
 
-instance decodeJsonAuthor :: DecodeJson Author where
+instance decodeJsonProfile :: DecodeJson Profile where
   decodeJson json = do
     obj <- decodeJson json
     bio <- obj .:? "bio"
     following <- obj .: "following"
     image <- obj .: "image"
     username <- obj .: "username"
-    pure $ Author
+    pure $ Profile
       { bio
       , following
       , image

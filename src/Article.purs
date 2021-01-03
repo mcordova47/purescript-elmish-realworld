@@ -16,7 +16,7 @@ import Effect.Aff.Class (class MonadAff)
 import Elmish (DispatchMsgFn, ReactElement, Transition, forkMaybe)
 import Elmish.HTML.Styled as H
 import Types.Article (Article(..))
-import Types.Author (Author(..))
+import Types.Profile (Profile(..))
 import Utils.DateTime as DateTime
 import Utils.Html as Html
 
@@ -50,7 +50,7 @@ update state = case _ of
 
 view :: State -> DispatchMsgFn Message -> ReactElement
 view state _ = case state.article of
-  Just (Article article@{ author: Author author}) ->
+  Just (Article article@{ author: Profile author}) ->
     H.div "article-page"
     [ H.div "banner" $
         H.div "container"
