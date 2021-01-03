@@ -2,27 +2,35 @@ module Api
   ( ArticleResponse(..)
   , ArticlesResponse(..)
   , Error(..)
+  , LoginRequest(..)
+  , RegisterRequest(..)
   , TagsResponse(..)
+  , UserResponse(..)
   , article
   , articles
+  , login
+  , register
   , tags
   ) where
 
 import Prelude
 
 import Affjax as Affjax
+import Affjax.RequestBody as RequestBody
 import Affjax.ResponseFormat (json)
-import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError, decodeJson, (.:))
+import Data.Argonaut.Encode (class EncodeJson, encodeJson)
+import Data.Argonaut.Encode.Generic.Rep (genericEncodeJson)
 import Data.Array (catMaybes)
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..))
-import Data.Foldable (intercalate, notElem)
-import Data.Maybe (Maybe)
+import Data.Either (Either)
+import Data.Foldable (intercalate)
+import Data.Generic.Rep (class Generic)
+import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
-import Effect.Exception (error)
 import Types.Article (Article)
+import Types.User (User)
 
 data Error
   = HttpError Affjax.Error
@@ -53,14 +61,7 @@ articles { limit, offset, tag} = liftAff do
   res <- Affjax.get json $ baseUrl <> "/articles" <> query
   pure $ res
     # lmap HttpError
-    >>= \r ->
-      -- Turns out, Affjax doesn't report some error codes as errors. One example
-      -- I discovered is 403. So we turn non-200 codes into errors here. 200
-      -- should be enough for us for now, and we can always generalize this logic
-      -- later.
-      if r.status `notElem` [StatusCode 200, StatusCode 204]
-        then Left $ HttpError $ Affjax.XHRError $ error $ show r.status
-        else lmap ParseError $ responseBody r
+    >>= \r -> lmap ParseError $ responseBody r
   where
     responseBody r = decodeJson r.body
 
@@ -84,16 +85,63 @@ article slug = liftAff do
   res <- Affjax.get json $ baseUrl <> "/articles/" <> slug
   pure $ res
     # lmap HttpError
-    >>= \r ->
-      -- Turns out, Affjax doesn't report some error codes as errors. One example
-      -- I discovered is 403. So we turn non-200 codes into errors here. 200
-      -- should be enough for us for now, and we can always generalize this logic
-      -- later.
-      if r.status `notElem` [StatusCode 200, StatusCode 204]
-        then Left $ HttpError $ Affjax.XHRError $ error $ show r.status
-        else lmap ParseError $ responseBody r
+    >>= \r -> lmap ParseError $ responseBody r
   where
     responseBody r = decodeJson r.body
+
+newtype UserResponse = UserResponse
+  { user :: User
+  }
+instance decodeJsonUserResponse :: DecodeJson UserResponse where
+  decodeJson json = do
+    obj <- decodeJson json
+    user <- obj .: "user"
+    pure $ UserResponse { user }
+
+newtype LoginRequest = LoginRequest
+  { user ::
+      { email :: String
+      , password :: String
+      }
+  }
+derive instance gLoginRequest :: Generic LoginRequest _
+instance encodeJsonLoginRequest :: EncodeJson LoginRequest where
+  encodeJson = genericEncodeJson
+
+login :: forall m. MonadAff m => LoginRequest -> m (Either Error UserResponse)
+login req = liftAff do
+  res <- Affjax.post json (baseUrl <> "/login") requestBody
+  pure $ res
+    # lmap HttpError
+    >>= \r -> lmap ParseError $ responseBody r
+  where
+    requestBody =
+      Just $ RequestBody.json $ encodeJson req
+    responseBody r =
+      decodeJson r.body
+
+newtype RegisterRequest = RegisterRequest
+  { user ::
+      { email :: String
+      , password :: String
+      , username :: String
+      }
+  }
+derive instance gRegisterRequest :: Generic RegisterRequest _
+instance encodeJsonRegisterRequest :: EncodeJson RegisterRequest where
+  encodeJson = genericEncodeJson
+
+register :: forall m. MonadAff m => RegisterRequest -> m (Either Error UserResponse)
+register req = liftAff do
+  res <- Affjax.post json (baseUrl <> "/users") requestBody
+  pure $ res
+    # lmap HttpError
+    >>= \r -> lmap ParseError $ responseBody r
+  where
+    requestBody =
+      Just $ RequestBody.json $ encodeJson req
+    responseBody r =
+      decodeJson r.body
 
 newtype TagsResponse = TagsResponse
   { tags :: Array String
@@ -109,14 +157,7 @@ tags = liftAff do
   res <- Affjax.get json $ baseUrl <> "/tags"
   pure $ res
     # lmap HttpError
-    >>= \r ->
-      -- Turns out, Affjax doesn't report some error codes as errors. One example
-      -- I discovered is 403. So we turn non-200 codes into errors here. 200
-      -- should be enough for us for now, and we can always generalize this logic
-      -- later.
-      if r.status `notElem` [StatusCode 200, StatusCode 204]
-        then Left $ HttpError $ Affjax.XHRError $ error $ show r.status
-        else lmap ParseError $ responseBody r
+    >>= \r -> lmap ParseError $ responseBody r
   where
     responseBody :: Affjax.Response Json -> Either JsonDecodeError TagsResponse
     responseBody r =  decodeJson r.body
