@@ -11,19 +11,30 @@ module Pages.Login
 
 import Prelude
 
-import Elmish (DispatchMsgFn, ReactElement, Transition)
+import Elmish (DispatchMsgFn, ReactElement, Transition, handleMaybe)
 import Elmish.HTML.Styled as H
 import Router as Router
+import Utils.Html (eventTargetValue)
 
 data State
   = Login LoginState
   | Register RegisterState
 
-type LoginState = Unit
+type LoginState =
+  { email :: String
+  , password :: String
+  }
 
-type RegisterState = Unit
+type RegisterState =
+  { email :: String
+  , password :: String
+  , username :: String
+  }
 
-type Message = Void
+data Message
+  = EditEmail String
+  | EditPassword String
+  | EditUsername String
 
 data Page
   = LoginPage
@@ -31,15 +42,26 @@ data Page
 
 init :: forall m. Page -> Transition m Message State
 init = case _ of
-  LoginPage -> pure $ Login unit
-  RegisterPage -> pure $ Register unit
+  LoginPage -> pure $ Login { email: "", password: "" }
+  RegisterPage -> pure $ Register { email: "", password: "", username: "" }
 
 update :: forall m. State -> Message -> Transition m Message State
-update state = case _ of
-  _ -> pure state
+update state message = case message, state of
+  EditEmail email, Login loginState ->
+    pure $ Login loginState { email = email }
+  EditEmail email, Register registerState ->
+    pure $ Register registerState { email = email }
+  EditPassword password, Login loginState ->
+    pure $ Login loginState { password = password }
+  EditPassword password, Register registerState ->
+    pure $ Register registerState { password = password }
+  EditUsername username, Register registerState ->
+    pure $ Register registerState { username = username }
+  EditUsername username, _ ->
+    pure state
 
 view :: State -> DispatchMsgFn Message -> ReactElement
-view state _ =
+view state dispatch =
   H.div "auth-page" $
     H.div "container page" $
       H.div "row" $
@@ -63,20 +85,30 @@ view state _ =
           [ case state of
               Login _ ->
                 H.empty
-              Register _ -> H.fieldset "form-group" $
+              Register { username } -> H.fieldset "form-group" $
                 H.input_ "form-control form-control-lg"
                   { placeholder: "Username"
                   , type: "text"
+                  , value: username
+                  , onChange: handleMaybe dispatch (map EditUsername <<< eventTargetValue)
                   }
           , H.fieldset "form-group" $
               H.input_ "form-control form-control-lg"
                 { placeholder: "Email"
                 , type: "text"
+                , value: case state of
+                    Login { email } -> email
+                    Register { email } -> email
+                , onChange: handleMaybe dispatch (map EditEmail <<< eventTargetValue)
                 }
           , H.fieldset "form-group" $
               H.input_ "form-control form-control-lg"
                 { placeholder: "Password"
                 , type: "password"
+                , value: case state of
+                    Login { password } -> password
+                    Register { password } -> password
+                , onChange: handleMaybe dispatch (map EditPassword <<< eventTargetValue)
                 }
           , H.button "btn btn-lg btn-primary pull-xs-right" case state of
               Login _ -> "Sign in"
