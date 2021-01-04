@@ -16,6 +16,7 @@ import Layout.Footer as Footer
 import Layout.Header as Header
 import Pages.Article as Article
 import Pages.Home as Home
+import Pages.Login as Login
 import Router (Route)
 import Router as Router
 import Types.Article as Types
@@ -37,11 +38,13 @@ main =
 data State
   = Article Article.State
   | Home Home.State
+  | Login Login.State
   | Loading
 
 data Message
   = ArticleMsg Article.Message
   | HomeMsg Home.Message
+  | LoginMsg Login.Message
   | SetRoute Route
 
 def :: forall m. MonadAff m => ComponentDef m Message State
@@ -80,6 +83,11 @@ update state message = case message, state of
     pure $ Article articleState
   HomeMsg (Right _), _ ->
     pure state
+  LoginMsg msg, Login login ->
+    Login.update login msg
+    # bimap LoginMsg Login
+  LoginMsg msg, _ ->
+    pure state
   SetRoute route, _ -> do
     ensureCorrectUrl route
     case route of
@@ -89,10 +97,16 @@ update state message = case message, state of
       Router.Article slug -> do
         article <- Article.init { article: Nothing, slug } # lmap ArticleMsg
         pure $ Article article
+      Router.Login -> do
+        login <- Login.init Login.LoginPage # lmap LoginMsg
+        pure $ Login login
+      Router.Register -> do
+        login <- Login.init Login.RegisterPage # lmap LoginMsg
+        pure $ Login login
 
 view :: State -> DispatchMsgFn Message -> ReactElement
 view state dispatch = H.fragment
-  [ Header.view
+  [ Header.view currentRoute
   , body
   , Footer.view
   ]
@@ -102,8 +116,17 @@ view state dispatch = H.fragment
         Article.view article (dispatch >#< ArticleMsg)
       Home home ->
         Home.view home (dispatch >#< HomeMsg)
+      Login login ->
+        Login.view login (dispatch >#< LoginMsg)
       Loading ->
         H.empty
+
+    currentRoute = case state of
+      Article { article: Just (Types.Article { slug }) } -> Router.Article slug
+      Home _ -> Router.Home
+      Login (Login.Login _) -> Router.Login
+      Login (Login.Register _) -> Router.Register
+      _ -> Router.Home
 
 ensureCorrectUrl :: forall m. MonadEffect m => Route -> Transition m Message Unit
 ensureCorrectUrl route = forkVoid $ liftEffect do

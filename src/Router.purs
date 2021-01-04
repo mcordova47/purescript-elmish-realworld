@@ -19,12 +19,17 @@ import Foreign.Object as Object
 data Route
   = Home
   | Article String
+  | Login
+  | Register
+derive instance eqRoute :: Eq Route
 derive instance gRoute :: Generic Route _
 
 routesDef :: forall syntax. Syntax syntax => syntax PathInfo Route
 routesDef =
   (Ctor :: Ctor "Home") <|:|> end
   <|||> (Ctor :: Ctor "Article") <|:|> seg "article" *|> segValue <|* end
+  <|||> (Ctor :: Ctor "Login") <|:|> seg "login" <|* end
+  <|||> (Ctor :: Ctor "Register") <|:|> seg "register" <|* end
 
 print :: Route -> String
 print =
