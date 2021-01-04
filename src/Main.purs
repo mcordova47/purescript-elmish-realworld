@@ -124,8 +124,7 @@ view state dispatch = H.fragment
     currentRoute = case state of
       Article { article: Just (Types.Article { slug }) } -> Router.Article slug
       Home _ -> Router.Home
-      Login (Login.Login _) -> Router.Login
-      Login (Login.Register _) -> Router.Register
+      Login loginState -> Login.route loginState
       _ -> Router.Home
 
 ensureCorrectUrl :: forall m. MonadEffect m => Route -> Transition m Message Unit

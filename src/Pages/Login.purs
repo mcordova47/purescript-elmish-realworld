@@ -1,12 +1,13 @@
 module Pages.Login
   ( Message
   , Page(..)
-  , State(..)
+  , State
   , LoginState
   , RegisterState
   , init
   , update
   , view
+  , route
   ) where
 
 import Prelude
@@ -115,3 +116,8 @@ view state dispatch =
               Register _ -> "Sign up"
           ]
         ]
+
+route :: State -> Router.Route
+route = case _ of
+  Login _ -> Router.Login
+  Register _ -> Router.Register
