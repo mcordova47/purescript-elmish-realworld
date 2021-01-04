@@ -14,18 +14,14 @@ view currentRoute =
     H.div "container"
     [ H.a_ "navbar-brand" { href: Router.print Router.Home } "conduit"
     , H.ul "nav navbar-nav pull-xs-right" $
-      [ navItem Router.Home
-      , navItem Router.Login
-      , navItem Router.Register
+      [ navItem { route: Router.Home, label: "Home" }
+      , navItem { route: Router.Login, label: "Sign in" }
+      , navItem { route: Router.Register, label: "Sign up" }
       ]
     ]
   where
-    navItem route =
+    navItem { route, label } =
       H.li "nav-item" $
         H.a_ ("nav-link" <> if currentRoute == route then " active" else "")
-          { href: Router.print route } $
-          case route of
-            Router.Home -> "Home"
-            Router.Article _ -> "Article"
-            Router.Login -> "Sign in"
-            Router.Register -> "Sign up"
+          { href: Router.print route }
+          label
